@@ -334,6 +334,16 @@
             window.location.reload();
         });
 
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                console.log("Camera stream started", stream);
+                const video = document.getElementById("camera");
+                video.srcObject = stream;
+            })
+            .catch(function (error) {
+                console.error("Camera access error:", error);
+            });
+
 
 
 
