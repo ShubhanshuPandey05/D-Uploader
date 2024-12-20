@@ -38,6 +38,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname,"backend", 'index.html'));
 });
 
+// Testing the server
+app.get('/test',(req,res) => {
+    res.send('Hello from D-Uploader server')
+})
+
 // Upload endpoint
 app.post("/api/upload", upload.single("file"), async (req, res) => {
     try {
