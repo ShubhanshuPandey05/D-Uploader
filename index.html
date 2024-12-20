@@ -12,9 +12,14 @@
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Full-screen video */
         #camera {
             position: absolute;
             top: 0;
@@ -23,35 +28,35 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(1);
-        }
-
-        /* Style for the whole page */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #f5f5f5;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Camera Styles */
-        #camera {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
             z-index: -1;
-            /* Ensures camera feed is behind everything else */
         }
 
-        /* Popup Styling */
+        #captureBtn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fff;
+            border: none;
+            height: 70px;
+            width: 70px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        #cameraSelectBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
         #popup {
             display: none;
             position: fixed;
@@ -59,157 +64,51 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: #fff;
-            padding: 25px 30px;
+            padding: 25px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border-radius: 15px;
-            width: 80%;
-            max-width: 500px;
-            text-align: center;
             z-index: 1000;
-        }
-
-        #popup h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
         }
 
         #popup input,
-        #popup select {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
+        #popup select,
         #popup button {
-            padding: 12px 20px;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
             width: 100%;
-            font-size: 18px;
-            margin-top: 10px;
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 16px;
         }
 
-        /* Capture Button Styling */
-        #captureBtn {
-            position: absolute;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #fff;
-            color: black;
-            border: none;
-            height: 70px;
-            width: 70px;
-            border-radius: 100%;
-            /* padding: 20px; */
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-
-        #captureBtn:hover {
-            background-color: #e6e2e2;
-        }
-
-        /* Camera Change Button */
-        #cameraSelectBtn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: white;
-            color: black;
-            border: none;
-            border-radius: 100px;
-            padding: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-
-        #cameraSelectBtn:hover {
-            background-color: #e6e2e2;
-        }
-
-        /* Optional Overlay to dim background when popup is active */
-        #overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            display: none;
-        }
-
-        /* Style for the popup button container */
-        #buttonContainer {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        /* Cancel Button Styling */
         #cancelBtn {
-            padding: 12px 20px;
             background-color: #dc3545;
             color: white;
             border: none;
-            border-radius: 8px;
             cursor: pointer;
-            width: 48%;
-            font-size: 18px;
-        }
-
-        #cancelBtn:hover {
-            background-color: #c82333;
-        }
-
-        #captureImage {
-            width: 40px;
-        }
-
-        #changeImage {
-            width: 40px;
         }
 
         #sendBtn {
             background-color: blue;
-        }
-
-        #sendBtn:hover {
-            background-color: rgb(1, 1, 191);
+            color: white;
+            border: none;
+            cursor: pointer;
         }
     </style>
 </head>
 
 <body>
     <video id="camera" autoplay playsinline></video>
-    <button id="captureBtn"><img src="shutter.png" alt="" srcset="" id="captureImage"></button>
-    <button id="cameraSelectBtn"><img src="ChangeCamera.png" alt="" srcset="" id="changeImage"></button>
+    <button id="captureBtn"><img src="shutter.png" alt="Capture" width="40"></button>
+    <button id="cameraSelectBtn"><img src="ChangeCamera.png" alt="Switch Camera" width="40"></button>
     <canvas id="canvas" style="display: none;"></canvas>
 
     <div id="popup">
-        <input type="text" id="invoiceNo" placeholder="Enter Invoice Number:">
+        <input type="text" id="invoiceNo" placeholder="Enter Invoice Number">
         <select id="sheetName">
             <option value="ROLL">ROLL</option>
             <option value="CUT">CUT</option>
         </select>
-        <div id="buttonContainer">
-            <button id="cancelBtn">Cancel</button>
-            <button id="sendBtn">Send</button>
-        </div>
+        <button id="cancelBtn">Cancel</button>
+        <button id="sendBtn">Send</button>
     </div>
 
     <script>
@@ -223,61 +122,43 @@
         const cameraSelectBtn = document.getElementById("cameraSelectBtn");
         const sheetNameSelect = document.getElementById('sheetName');
         let currentStream = null;
-        let devices = [];
+        let useFrontCamera = false;
 
-        // Get available cameras
-        async function getCameras() {
-            try {
-                const deviceList = await navigator.mediaDevices.enumerateDevices();
-                devices = deviceList.filter(device => device.kind === "videoinput");
-                if (devices.length > 0) {
-                    startCamera(devices[0].deviceId);
-                }
-            } catch (err) {
-                console.error("Error fetching cameras:", err);
-            }
-        }
-
-        // Start the selected camera
-        async function startCamera(deviceId) {
+        // Function to start the camera with specified facingMode
+        async function startCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
             }
 
             try {
                 const constraints = {
-                    video: { deviceId: { exact: deviceId }, facingMode: 'user' } // Relax the constraints
+                    video: { facingMode: useFrontCamera ? "user" : "environment" }
                 };
+
                 currentStream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = currentStream;
 
-                // Check if it's the front camera and flip the video if needed
-                const track = currentStream.getVideoTracks()[0];
-                const settings = track.getSettings();
-                if (settings.facingMode === "user") {
-                    video.style.transform = "scaleX(-1)";
-                } else {
-                    video.style.transform = "scaleX(1)";
-                }
+                // Flip the video if using the front camera
+                video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
             } catch (err) {
-                console.error("Camera access error:", err);
+                console.error("Error accessing camera:", err);
+                alert("Camera access error: " + err.message);
             }
         }
 
-        // Handle camera change button click
+        // Toggle between front and back camera
         cameraSelectBtn.addEventListener("click", () => {
-            const currentIndex = devices.findIndex(device => device.deviceId === currentStream.getVideoTracks()[0].getSettings().deviceId);
-            const nextDevice = devices[(currentIndex + 1) % devices.length];
-            startCamera(nextDevice.deviceId);
+            useFrontCamera = !useFrontCamera;
+            startCamera();
         });
 
-        // Capture image and display popup
+        // Capture image and show the popup
         captureBtn.addEventListener("click", () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext("2d");
 
-            if (video.style.transform === "scaleX(-1)") {
+            if (useFrontCamera) {
                 context.translate(canvas.width, 0);
                 context.scale(-1, 1);
             }
@@ -287,10 +168,11 @@
             popup.style.display = "block";
         });
 
-        // Handle form submission
+        // Handle send button click
         sendBtn.addEventListener("click", async () => {
             const sheetName = sheetNameSelect.value;
             const invoiceNo = invoiceInput.value;
+
             if (!invoiceNo) {
                 alert("Please enter an invoice number.");
                 return;
@@ -325,28 +207,14 @@
             }, 'image/jpeg');
         });
 
-        // Initialize cameras on page load
-        getCameras();
-
-        // Hide the popup and overlay when the cancel button is clicked
+        // Handle cancel button click
         cancelBtn.addEventListener("click", () => {
-            // Reload the page to reset everything
-            window.location.reload();
+            popup.style.display = "none";
+            video.play();
         });
 
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (stream) {
-                console.log("Camera stream started", stream);
-                const video = document.getElementById("camera");
-                video.srcObject = stream;
-            })
-            .catch(function (error) {
-                console.error("Camera access error:", error);
-            });
-
-
-
-
+        // Initialize the camera on page load with the back camera by default
+        startCamera();
     </script>
 </body>
 
