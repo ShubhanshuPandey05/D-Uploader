@@ -70,7 +70,7 @@ function pingServer() {
 }
 
 // Ping the server every 2 minute
-setInterval(pingServer, 1200000);
+setInterval(pingServer, 120000);
 
 // Upload endpoint
 app.post("/api/upload", upload.single("file"), async (req, res) => {
