@@ -35,13 +35,42 @@ app.use(express.static(path.join(__dirname)));
 
 // Route to serve the index.html file
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname,"backend", 'index.html'));
+    res.sendFile(path.join(__dirname, "backend", 'index.html'));
 });
 
 // Testing the server
-app.get('/test',(req,res) => {
+app.get('/test', (req, res) => {
     res.send('Hello from D-Uploader server')
 })
+
+function pingServer() {
+    fetch('https://fifth-season-decor-order-app.onrender.com/ping')
+        .then(response => {
+            if (response.ok) {
+                console.log('Server is reachable');
+            } else {
+                console.error('Server responded with an error:', response.status);
+            }
+        })
+        .catch(error => {
+            console.error('Error pinging the server:', error);
+        });
+
+    fetch('https://formsflow.onrender.com/')
+        .then(response => {
+            if (response.ok) {
+                console.log('Server is reachable');
+            } else {
+                console.error('Server responded with an error:', response.status);
+            }
+        })
+        .catch(error => {
+            console.error('Error pinging the server:', error);
+        });
+}
+
+// Ping the server every 2 minute
+setInterval(pingServer, 1200000);
 
 // Upload endpoint
 app.post("/api/upload", upload.single("file"), async (req, res) => {

@@ -185,6 +185,13 @@
         #sendBtn:hover {
             background-color: rgb(1, 1, 191);
         }
+        #full-screen{
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -194,14 +201,16 @@
     <button id="cameraSelectBtn"><img src="ChangeCamera.png" alt="Switch Camera" width="40"></button>
     <canvas id="canvas" style="display: none;"></canvas>
 
-    <div id="popup">
-        <input type="text" id="invoiceNo" placeholder="Enter Invoice Number">
-        <select id="sheetName">
-            <option value="ROLL">ROLL</option>
-            <option value="CUT">CUT</option>
-        </select>
-        <button id="cancelBtn">Cancel</button>
-        <button id="sendBtn">Send</button>
+    <div id="full-screen">
+        <div id="popup">
+            <input type="text" id="invoiceNo" placeholder="Enter Invoice Number">
+            <select id="sheetName">
+                <option value="ROLL">ROLL</option>
+                <option value="CUT">CUT</option>
+            </select>
+            <button id="cancelBtn">Cancel</button>
+            <button id="sendBtn">Send</button>
+        </div>
     </div>
 
     <script>
