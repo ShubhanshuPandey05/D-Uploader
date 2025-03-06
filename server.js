@@ -43,45 +43,49 @@ app.get('/test', (req, res) => {
     res.send('Hello from D-Uploader server')
 })
 
-function pingServer() {
-    fetch('https://fifth-season-decor-order-app.onrender.com/ping')
-        .then(response => {
-            if (response.ok) {
-                console.log('Server is reachable');
-            } else {
-                console.error('Server responded with an error:', response.status);
-            }
-        })
-        .catch(error => {
-            console.error('Error pinging the server:', error);
-        });
-
-    fetch('https://formsflow.onrender.com/')
-        .then(response => {
-            if (response.ok) {
-                console.log('Server is reachable');
-            } else {
-                console.error('Server responded with an error:', response.status);
-            }
-        })
-        .catch(error => {
-            console.error('Error pinging the server:', error);
-        });
-}
+// function pingServer() {
+//     fetch('https://formsflow.onrender.com/')
+//         .then(response => {
+//             if (response.ok) {
+//                 console.log('Server is reachable');
+//             } else {
+//                 console.error('Server responded with an error:', response.status);
+//             }
+//         })
+//         .catch(error => {
+//             console.error('Error pinging the server:', error);
+//         });
+// }
 
 // Ping the server every 2 minute
-setInterval(pingServer, 120000);
+// setInterval(pingServer, 120000);
 
 // Upload endpoint
 app.post("/api/upload", upload.single("file"), async (req, res) => {
     try {
-        const { invoiceNo, sheetName } = req.body;
+        const { sheetName, documentType, invoiceNo, docketNo } = req.body;
+
+
+        console.log(sheetName,documentType,invoiceNo,docketNo);
+        
 
         // Step 1: Upload the file to Google Drive
-        const fileMetadata = {
-            name: `invoice-${invoiceNo}.jpg`,
-            parents: [process.env.DRIVE_FOLDER_ID],
-        };
+        let fileMetadata = {};
+        let range = "";
+
+        if (documentType === "INVOICE") {
+            fileMetadata = {
+                name: `invoice-${invoiceNo}.jpg`,
+                parents: [process.env.DRIVE_FOLDER_ID],
+            };
+            range = `${sheetName}!Y2:Y`
+        } else {
+            fileMetadata = {
+                name: `docket-${docketNo}.jpg`,
+                parents: [process.env.DRIVE_FOLDER_ID],
+            };
+            range = `${sheetName}!AA2:AA`
+        }
 
         // Convert Buffer to Readable Stream
         const bufferStream = new stream.PassThrough();
@@ -105,39 +109,55 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         // Step 2: Find the row with the matching Invoice No in the selected sheet
         const sheetResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.SHEET_ID,
-            range: `${sheetName}!X2:X`,
+            range: range,
         });
 
         const rows = sheetResponse.data.values;
         let rowIndex = -1;
 
         if (rows) {
-            rows.forEach((row, index) => {
-                if (row[0] === invoiceNo) {
-                    rowIndex = index + 2; // Account for header row (index + 2)
+            if (documentType === 'INVOICE') {
+                rows.forEach((row, index) => {
+                    if (row[0] === invoiceNo) {
+                        rowIndex = index + 2; // Account for header row (index + 2)
+                    }
+                });
+            }
+            else {
+                rows.forEach((row, index) => {
+                    if (row[0] === docketNo) {
+                        rowIndex = index + 2; // Account for header row (index + 2)
+                    }
+                    });
                 }
+        }
+
+            if (rowIndex === -1) {
+                return res.status(404).json({ message: "Invoice No not found in the sheet." });
+            }
+
+            let range2 = '';
+            if (documentType === 'INVOICE') {
+                range2 = `${sheetName}!Z${rowIndex}`
+            }else{
+                range2 = `${sheetName}!AB${rowIndex}`
+            }
+
+            // Step 3: Update the DOCKET NO. field (column Y) with the file link
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: process.env.SHEET_ID,
+                range: range2,
+                valueInputOption: "RAW",
+                requestBody: {
+                    values: [[fileLink]],
+                },
             });
+
+            res.json({ message: "File uploaded and sheet updated successfully!", link: fileLink });
+        } catch (error) {
+            console.error("Error:", error);
+            res.status(500).json({ error: error.message, message: "An error occurred while processing your request." });
         }
-
-        if (rowIndex === -1) {
-            return res.status(404).json({ message: "Invoice No not found in the sheet." });
-        }
-
-        // Step 3: Update the DOCKET NO. field (column Y) with the file link
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: process.env.SHEET_ID,
-            range: `${sheetName}!Y${rowIndex}`,
-            valueInputOption: "RAW",
-            requestBody: {
-                values: [[fileLink]],
-            },
-        });
-
-        res.json({ message: "File uploaded and sheet updated successfully!", link: fileLink });
-    } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ error: error.message, message: "An error occurred while processing your request." });
-    }
-});
+    });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

@@ -185,7 +185,8 @@
         #sendBtn:hover {
             background-color: rgb(1, 1, 191);
         }
-        #full-screen{
+
+        #full-screen {
             height: 100vh;
             width: 100vw;
             display: flex;
@@ -203,8 +204,15 @@
 
     <div id="full-screen">
         <div id="popup">
-            <input type="text" id="invoiceNo" placeholder="Enter Invoice Number">
+            <select id="documentType">
+                <option value="">Select Document Type</option>
+                <option value="INVOICE">Invoice</option>
+                <option value="DOCKET">Docket</option>
+            </select>
+            <input type="hidden" id="invoiceNo" placeholder="Enter Invoice Number">
+            <input type="hidden" id="docketNo" placeholder="Enter Docket Number">
             <select id="sheetName">
+                <option value="">Select Order Type</option>
                 <option value="ROLL">ROLL</option>
                 <option value="CUT">CUT</option>
             </select>
@@ -221,10 +229,26 @@
         const popup = document.getElementById("popup");
         const sendBtn = document.getElementById("sendBtn");
         const invoiceInput = document.getElementById("invoiceNo");
+        const docketInput = document.getElementById("docketNo");
         const cameraSelectBtn = document.getElementById("cameraSelectBtn");
         const sheetNameSelect = document.getElementById('sheetName');
+        const documentTypeSelect = document.getElementById("documentType");
         let currentStream = null;
         let useFrontCamera = false;
+
+
+        documentTypeSelect.addEventListener("change", () => {
+            if (documentTypeSelect.value === "INVOICE") {
+                invoiceInput.type = "text";  // Show invoice input
+                docketInput.type = "hidden"; // Hide docket input
+            } else if (documentTypeSelect.value === "DOCKET") {
+                docketInput.type = "text";   // Show docket input
+                invoiceInput.type = "hidden"; // Hide invoice input
+            } else {
+                invoiceInput.type = "hidden";
+                docketInput.type = "hidden";
+            }
+        });
 
         // Function to start the camera with specified facingMode
         async function startCamera() {
@@ -273,12 +297,38 @@
         // Handle send button click
         sendBtn.addEventListener("click", async () => {
             const sheetName = sheetNameSelect.value;
-            const invoiceNo = invoiceInput.value;
-
-            if (!invoiceNo) {
-                alert("Please enter an invoice number.");
+            const invoiceNo = invoiceInput.value || '';
+            const docketNo = docketInput.value || '';
+            const documentType = documentTypeSelect.value;
+            if (!documentType) {
+                alert("Please select a document type.");
                 return;
             }
+            if (!sheetName) {
+                alert("Please select an order type.");
+                return;
+            }
+            if (!invoiceNo && !docketNo) {
+                alert("Please enter an Invoice or Docket number.");
+                return;
+            }
+            sendBtn.disabled = true;
+
+            const loadingScreen = document.createElement("div");
+            loadingScreen.id = "loadingScreen";
+            loadingScreen.style.display = "none";
+            loadingScreen.style.position = "absolute";
+            loadingScreen.style.zIndex = "1001"
+            loadingScreen.style.top = "0";
+            loadingScreen.style.left = "0";
+            loadingScreen.style.width = "100%";
+            loadingScreen.style.height = "100%";
+            loadingScreen.style.background = "rgba(0, 0, 0, 0.5)";
+            loadingScreen.style.display = "flex";
+            loadingScreen.style.justifyContent = "center";
+            loadingScreen.style.alignItems = "center";
+            loadingScreen.innerHTML = '<div style="color: white; font-size: 24px;">Uploading...</div>';
+            document.body.appendChild(loadingScreen);
 
             canvas.toBlob(async (blob) => {
                 if (!blob) {
@@ -290,6 +340,8 @@
                 formData.append('file', blob, 'capture.jpg');
                 formData.append('invoiceNo', invoiceNo);
                 formData.append('sheetName', sheetName);
+                formData.append('docketNo', docketNo);
+                formData.append('documentType', documentType);
 
                 try {
                     const response = await fetch('/api/upload', {
@@ -301,14 +353,30 @@
                     if (response.ok) {
                         alert(`File uploaded successfully! Link: ${result.link}`);
                         popup.style.display = "none";
+                        invoiceInput.value = '';
+                        invoiceInput.type = 'hidden'
+                        docketInput.value = '';
+                        docketInput.type = 'hidden';
+                        documentTypeSelect.value = '';
+                        sheetNameSelect.value = '';
                         video.play();
                     } else {
                         alert(`Error: ${result.message}`);
+                        invoiceInput.value = '';
+                        invoiceInput.type = 'hidden'
+                        docketInput.value = '';
+                        docketInput.type = 'hidden';
+                        documentTypeSelect.value = '';
+                        sheetNameSelect.value = '';
                         popup.style.display = "none";
                         video.play();
                     }
                 } catch (error) {
                     console.error('Error uploading file:', error);
+                } finally {
+                    // Hide loading screen and re-enable button
+                    loadingScreen.remove();
+                    sendBtn.disabled = false;
                 }
             }, 'image/jpeg');
         });
@@ -316,6 +384,12 @@
         // Handle cancel button click
         cancelBtn.addEventListener("click", () => {
             popup.style.display = "none";
+            invoiceInput.value = '';
+            invoiceInput.type = 'hidden'
+            docketInput.value = '';
+            docketInput.type = 'hidden';
+            documentTypeSelect.value = '';
+            sheetNameSelect.value = '';
             video.play();
         });
 
