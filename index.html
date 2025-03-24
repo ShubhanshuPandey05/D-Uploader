@@ -69,7 +69,9 @@
         }
 
         #popup input,
-        #popup select {
+        #popup select,
+        #fileUploadPopup input,
+        #fileUploadPopup select {
             width: 100%;
             padding: 12px;
             margin: 8px 0;
@@ -155,7 +157,7 @@
         }
 
         /* Cancel Button Styling */
-        #cancelBtn {
+        #cancelBtn, #cancelFileBtn  {
             padding: 12px 20px;
             background-color: #dc3545;
             color: white;
@@ -166,7 +168,7 @@
             font-size: 18px;
         }
 
-        #cancelBtn:hover {
+        #cancelBtn:hover, #cancelFileBtn:hover {
             background-color: #c82333;
         }
 
@@ -178,11 +180,18 @@
             width: 40px;
         }
 
-        #sendBtn {
+        #sendBtn, #sendFileBtn {
             background-color: blue;
+            padding: 12px 20px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 48%;
+            font-size: 18px;
         }
 
-        #sendBtn:hover {
+        #sendBtn:hover, #sendFileBtn:hover {
             background-color: rgb(1, 1, 191);
         }
 
@@ -193,6 +202,74 @@
             justify-content: center;
             align-items: center;
         }
+
+        /* Upload Button Styling */
+        #uploadBtn {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            bottom: 20px;
+            right: 20px;
+            background-color: #fff;
+            color: black;
+            border: none;
+            height: 60px;
+            width: 60px;
+            border-radius: 100%;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        #uploadBtn:hover {
+            background-color: #e6e2e2;
+        }
+
+        #uploadImage {
+            width: 30px;
+        }
+
+        /* File input is hidden but accessible through the button */
+        #fileInput {
+            display: none;
+        }
+
+        /* File Upload Popup Styling */
+        #fileUploadPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 25px 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        #fileUploadPopup h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        #selectedFileName {
+            margin: 15px 0;
+            word-break: break-all;
+            font-size: 14px;
+            color: #666;
+        }
+
+        #fileTypeIcon {
+            font-size: 36px;
+            margin: 10px 0;
+            color: #444;
+        }
     </style>
 </head>
 
@@ -200,6 +277,8 @@
     <video id="camera" autoplay playsinline></video>
     <button id="captureBtn"><img src="shutter.png" alt="Capture" width="40"></button>
     <button id="cameraSelectBtn"><img src="ChangeCamera.png" alt="Switch Camera" width="40"></button>
+    <button id="uploadBtn"><img src="upload.png" alt="Upload" width="30" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path d=%22M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z%22/></svg>'"></button>
+    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" />
     <canvas id="canvas" style="display: none;"></canvas>
 
     <div id="full-screen">
@@ -219,6 +298,26 @@
             <button id="cancelBtn">Cancel</button>
             <button id="sendBtn">Send</button>
         </div>
+
+        <div id="fileUploadPopup">
+            <h2>Upload Document</h2>
+            <div id="fileTypeIcon"></div>
+            <div id="selectedFileName">No file selected</div>
+            <select id="documentTypeFile">
+                <option value="">Select Document Type</option>
+                <option value="INVOICE">Invoice</option>
+                <option value="DOCKET">Docket</option>
+            </select>
+            <input type="hidden" id="invoiceNoFile" placeholder="Enter Invoice Number">
+            <input type="hidden" id="docketNoFile" placeholder="Enter Docket Number">
+            <select id="sheetNameFile">
+                <option value="">Select Order Type</option>
+                <option value="ROLL">ROLL</option>
+                <option value="CUT">CUT</option>
+            </select>
+            <button id="cancelFileBtn">Cancel</button>
+            <button id="sendFileBtn">Upload</button>
+        </div>
     </div>
 
     <script>
@@ -233,10 +332,25 @@
         const cameraSelectBtn = document.getElementById("cameraSelectBtn");
         const sheetNameSelect = document.getElementById('sheetName');
         const documentTypeSelect = document.getElementById("documentType");
+        
+        // New file upload elements
+        const uploadBtn = document.getElementById("uploadBtn");
+        const fileInput = document.getElementById("fileInput");
+        const fileUploadPopup = document.getElementById("fileUploadPopup");
+        const documentTypeFile = document.getElementById("documentTypeFile");
+        const invoiceNoFile = document.getElementById("invoiceNoFile");
+        const docketNoFile = document.getElementById("docketNoFile");
+        const sheetNameFile = document.getElementById("sheetNameFile");
+        const cancelFileBtn = document.getElementById("cancelFileBtn");
+        const sendFileBtn = document.getElementById("sendFileBtn");
+        const selectedFileName = document.getElementById("selectedFileName");
+        const fileTypeIcon = document.getElementById("fileTypeIcon");
+        
         let currentStream = null;
         let useFrontCamera = false;
+        let selectedFile = null;
 
-
+        // Change document type display for camera capture
         documentTypeSelect.addEventListener("change", () => {
             if (documentTypeSelect.value === "INVOICE") {
                 invoiceInput.type = "text";  // Show invoice input
@@ -247,6 +361,20 @@
             } else {
                 invoiceInput.type = "hidden";
                 docketInput.type = "hidden";
+            }
+        });
+
+        // Change document type display for file upload
+        documentTypeFile.addEventListener("change", () => {
+            if (documentTypeFile.value === "INVOICE") {
+                invoiceNoFile.type = "text";  // Show invoice input
+                docketNoFile.type = "hidden"; // Hide docket input
+            } else if (documentTypeFile.value === "DOCKET") {
+                docketNoFile.type = "text";   // Show docket input
+                invoiceNoFile.type = "hidden"; // Hide invoice input
+            } else {
+                invoiceNoFile.type = "hidden";
+                docketNoFile.type = "hidden";
             }
         });
 
@@ -294,7 +422,127 @@
             popup.style.display = "block";
         });
 
-        // Handle send button click
+        // Show file selection dialog when upload button is clicked
+        uploadBtn.addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        // Handle file selection
+        fileInput.addEventListener("change", (event) => {
+            if (event.target.files.length > 0) {
+                selectedFile = event.target.files[0];
+                selectedFileName.textContent = selectedFile.name;
+                
+                // Set icon based on file type
+                if (selectedFile.type === "application/pdf") {
+                    fileTypeIcon.innerHTML = "📄";
+                } else if (selectedFile.type.startsWith("image/")) {
+                    fileTypeIcon.innerHTML = "🖼️";
+                } else {
+                    fileTypeIcon.innerHTML = "📁";
+                }
+                
+                // Show file upload popup
+                fileUploadPopup.style.display = "block";
+            }
+        });
+
+        // Cancel file upload
+        cancelFileBtn.addEventListener("click", () => {
+            fileUploadPopup.style.display = "none";
+            fileInput.value = "";
+            selectedFile = null;
+            selectedFileName.textContent = "No file selected";
+            invoiceNoFile.value = '';
+            invoiceNoFile.type = 'hidden';
+            docketNoFile.value = '';
+            docketNoFile.type = 'hidden';
+            documentTypeFile.value = '';
+            sheetNameFile.value = '';
+        });
+
+        // Handle file upload
+        sendFileBtn.addEventListener("click", async () => {
+            const sheetName = sheetNameFile.value;
+            const invoiceNo = invoiceNoFile.value || '';
+            const docketNo = docketNoFile.value || '';
+            const documentType = documentTypeFile.value;
+            
+            if (!documentType) {
+                alert("Please select a document type.");
+                return;
+            }
+            if (!sheetName) {
+                alert("Please select an order type.");
+                return;
+            }
+            if (!invoiceNo && !docketNo) {
+                alert("Please enter an Invoice or Docket number.");
+                return;
+            }
+            if (!selectedFile) {
+                alert("Please select a file to upload.");
+                return;
+            }
+            
+            sendFileBtn.disabled = true;
+
+            // Create and show loading screen
+            const loadingScreen = document.createElement("div");
+            loadingScreen.id = "loadingScreen";
+            loadingScreen.style.position = "absolute";
+            loadingScreen.style.zIndex = "1001";
+            loadingScreen.style.top = "0";
+            loadingScreen.style.left = "0";
+            loadingScreen.style.width = "100%";
+            loadingScreen.style.height = "100%";
+            loadingScreen.style.background = "rgba(0, 0, 0, 0.5)";
+            loadingScreen.style.display = "flex";
+            loadingScreen.style.justifyContent = "center";
+            loadingScreen.style.alignItems = "center";
+            loadingScreen.innerHTML = '<div style="color: white; font-size: 24px;">Uploading...</div>';
+            document.body.appendChild(loadingScreen);
+
+            // Prepare FormData
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('invoiceNo', invoiceNo);
+            formData.append('sheetName', sheetName);
+            formData.append('docketNo', docketNo);
+            formData.append('documentType', documentType);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert(`File uploaded successfully! Link: ${result.link}`);
+                    fileUploadPopup.style.display = "none";
+                    fileInput.value = "";
+                    selectedFile = null;
+                    selectedFileName.textContent = "No file selected";
+                    invoiceNoFile.value = '';
+                    invoiceNoFile.type = 'hidden';
+                    docketNoFile.value = '';
+                    docketNoFile.type = 'hidden';
+                    documentTypeFile.value = '';
+                    sheetNameFile.value = '';
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('Error uploading file. Please try again.');
+            } finally {
+                loadingScreen.remove();
+                sendFileBtn.disabled = false;
+            }
+        });
+
+        // Handle send button click for camera capture
         sendBtn.addEventListener("click", async () => {
             const sheetName = sheetNameSelect.value;
             const invoiceNo = invoiceInput.value || '';
